@@ -13,7 +13,7 @@ const reducer = (state, action) => {
     case "receive-seat-info-from-server":
       return {
         hasLoaded: true,
-        seats: action.bookedSeats,
+        seats: action.seats,
         numOfRows: action.numOfRows,
         seatsPerRow: action.seatsPerRow,
       };
