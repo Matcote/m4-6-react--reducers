@@ -101,7 +101,7 @@ const Game = ({ count, dispatch }) => {
   return (
     <>
       <button onClick={() => dispatch({ type: "INCREMENT" })}>Increment</button>
-      <button onClick={() => dispatch({ type: "INCREMENT" })}>Decrement</button>
+      <button onClick={() => dispatch({ type: "DECREMENT" })}>Decrement</button>
     </>
   );
 };
@@ -176,18 +176,23 @@ If not, what could be improved?
 
 ```js
 { type: 'click-to-open-modal', state: { newModal: 'login' } }
+//better
+{type: 'click-login-link', state: { newModal: 'login' }}
 ```
 
 ---
 
 ```js
 { type: 'toggle-terms-of-service', agreed: true }
+//GOOD
 ```
 
 ---
 
 ```js
 { type: 'set-player-coordinates', x: 41, y: 22 }
+//better
+{type: 'move-player', x:41, y:22}
 ```
 
 ---
@@ -196,6 +201,8 @@ If not, what could be improved?
 {
   event: "logout";
 }
+//better
+{type: 'click-logout', event:'logout'}
 ```
 
 ---
@@ -291,13 +298,22 @@ Update the following examples to use `useReducer`
 
 ```jsx
 // Exercise 1
+const reducer = (state, action) =>{
+if (action.type === 'TOGGLE-LIGHT'){
+  return !state;
+}else{
+  throw new Error('Action type not valid')
+}
+}
+
+}
 const LightSwitch = () => {
-  const [isOn, setIsOn] = React.useState(false);
+  const [state, dispatch] = React.useReducer(reducer, false);
 
   return (
     <>
-      Light is {isOn ? "on" : "off"}.
-      <button onClick={() => setIsOn(!isOn)}>Toggle</button>
+      Light is {state ? "on" : "off"}.
+      <button onClick={() => dispatch({type: 'TOGGLE-LIGHT'})}>Toggle</button>
     </>
   );
 };
@@ -309,24 +325,36 @@ const LightSwitch = () => {
 
 ```jsx
 // Exercise 2
+const reducer = (action, state) => {
+  switch (action.type) {
+    case "REQUEST-DATA":
+      return "loading";
+    case "RECEIVE-DATA":
+      return "idle";
+    case "RECEIVE-ERROR":
+      return "error";
+    default:
+      throw new Error("Action type not valid");
+  }
+};
 function App() {
-  const [status, setStatus] = React.useState("idle");
+  const [state, dispatch] = React.useReducer(reducer, "idle");
 
   return (
     <form
       onSubmit={() => {
-        setStatus("loading");
+        dispatch({ type: "REQUEST-DATA" });
 
         getStatusFromServer()
           .then(() => {
-            setStatus("idle");
+            dispatch({ type: "RECCEIVE-DATA" });
           })
           .catch(() => {
-            setStatus("error");
+            dispatch({ type: "RECEIVE-ERROR" });
           });
       }}
     >
-      Status is: {status}
+      Status is: {state}
       <button>Submit</button>
     </form>
   );
@@ -338,7 +366,7 @@ function App() {
 <Timer />
 
 ```jsx
-// Exercise 3
+// Exercise 3 NOT DONE
 export const ModalContext = React.createContext(null);
 
 export const ModalProvider = ({ children }) => {
@@ -503,20 +531,33 @@ Update these objects to use `useReducer`, with a single immutable object
 
 ```jsx
 // Exercise 4
+const initialState = { points: 0, status: "idle" };
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "INCREMENT":
+      return { ...state, points: state.points + 1 };
+    case "DECREMENT":
+      return { ...state, points: state.points - 1 };
+    case "START-BUTTON-CLICKED":
+      return { ...state, status: "playing" };
+    default:
+      return state;
+  }
+};
 const Game = () => {
-  const [points, setPoints] = React.useState(0);
-  const [status, setStatus] = React.useState("idle");
+  const [state, dispatch] = React.useReducer(reducer, initialState);
 
   return (
     <>
-      Your score: {points}.
-      {status === "playing" && (
+      Your score: {state.points}.
+      {state.status === "playing" && (
         <>
-          <button onClick={() => setPoints(points + 1)}>🍓</button>
-          <button onClick={() => setPoints(points - 1)}>💀</button>
+          <button onClick={() => dispatch({ type: "INCREMENT" })}>🍓</button>
+          <button onClick={() => dispatch({ type: "DECREMENT" })}>💀</button>
         </>
       )}
-      <button onClick={() => setStatus("playing")}>Start game</button>
+      <button onClick={() => dispatch({ type: "START-BUTTON-CLICKED" })}>Start game</button>
     </>
   );
 };
@@ -531,27 +572,56 @@ const Game = () => {
 import sendDataToServer from "./some-madeup-place";
 import FormField from "./some-other-madeup-place";
 
+const initialState = { firstName: "", lastName: "", email: "" };
+const reducer = (action, state) => {
+  switch (action.type) {
+    case "SET-FIRST-NAME":
+      return {
+        ...state,
+        firstName: action.value,
+      };
+    case "SET-LAST-NAME":
+      return {
+        ...state,
+        lastName: action.value,
+      };
+    case "SET-EMAIL":
+      return {
+        ...state,
+        email: action.value,
+      };
+    case "RESET-FIELDS":
+      return initialState;
+    default:
+      return state;
+  }
+};
+
 const SignUpForm = () => {
-  const [firstName, setFirstName] = React.useState("");
-  const [lastName, setLastName] = React.useState("");
-  const [email, setEmail] = React.useState("");
+  const [state, dispatch] = React.useReducer(reducer, initialState);
 
   return (
     <form onSubmit={sendDataToServer}>
       <FormField
         label="First Name"
-        value={firstName}
-        onChange={(ev) => setFirstName(ev.target.value)}
+        value={state.firstName}
+        onChange={(ev) =>
+          dispatch({ type: "SET-FIRST-NAME", value: ev.target.value })
+        }
       />
       <FormField
         label="Last Name"
-        value={lastName}
-        onChange={(ev) => setLastName(ev.target.value)}
+        value={state.lastName}
+        onChange={(ev) =>
+          dispatch({ type: "SET-LAST-NAME", value: ev.target.value })
+        }
       />
       <FormField
         label="Email"
-        value={email}
-        onChange={(ev) => setEmail(ev.target.value)}
+        value={state.email}
+        onChange={(ev) =>
+          dispatch({ type: "SET-EMAIL", value: ev.target.value })
+        }
       />
 
       <button>Submit</button>
@@ -559,9 +629,7 @@ const SignUpForm = () => {
         onClick={(ev) => {
           ev.preventDefault();
 
-          setFirstName("");
-          setLastName("");
-          setEmail("");
+          dispatch({ type: "RESET-FIELDS" });
         }}
       >
         Reset
@@ -656,6 +724,28 @@ export const StudentProvider = ({ children }) => {
     </StudentContext.Provider>
   );
 };
+//ANSWER: (LOOK IT OVER)
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'mark-student-attendance': {
+      return {
+        ...state,
+        [action.studentName]: action.isPresent,
+      };
+    }
+​
+    case 'add-student-to-class': {
+      return {
+        ...state,
+        [action.studentName]: false,
+      };
+    }
+​
+    default:
+      throw new Error('unrecognized action');
+  }
+};
+
 ```
 
 ---
@@ -679,6 +769,40 @@ export const DataProvider = ({ children }) => {
     <DataContext.Provider value={{ state }}>{children}</DataContext.Provider>
   );
 };
+//ANSWER: (LOOK IT OVER)
+const reducer = (state, action) => {
+  switch (action.type) {
+    case 'request-data': {
+      return {
+        ...state,
+        status: 'loading',
+        errorMessage: null,
+        data: null,
+      };
+    }
+​
+    case 'receive-data': {
+      return {
+        ...state,
+        status: 'idle',
+        errorMessage: null,
+        data: action.data,
+      };
+    }
+​
+    case 'receive-error': {
+      return {
+        ...state,
+        status: 'error',
+        errorMessage: action.error,
+        data: null,
+      };
+    }
+​
+    default:
+      throw new Error('unrecognized action');
+  }
+}
 ```
 
 ---
