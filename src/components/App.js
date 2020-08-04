@@ -2,6 +2,7 @@ import React from "react";
 
 import GlobalStyles from "./GlobalStyles";
 import { SeatContext } from "./SeatContext";
+import TicketWidget from "./TicketWidget";
 
 function App() {
   const {
@@ -18,7 +19,7 @@ function App() {
   return (
     <>
       <GlobalStyles />
-      TODO: write code
+      <TicketWidget />
     </>
   );
 }
